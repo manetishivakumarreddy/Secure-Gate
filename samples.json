@@ -1,0 +1,135 @@
+{
+  "telemetry": {
+    "valid": {
+      "message_id": "MSG-101",
+      "sender": "SENSOR-01",
+      "message_type": "TELEMETRY",
+      "timestamp": "2026-10-17T00:00:00+05:30",
+      "sequence": 101,
+      "payload": {
+        "temperature": 28.5,
+        "voltage": 12.2,
+        "signal_strength": 85
+      }
+    },
+    "invalid_missing": {
+      "message_id": "MSG-102",
+      "sender": "SENSOR-01",
+      "message_type": "TELEMETRY",
+      "sequence": 102,
+      "payload": {
+        "temperature": 29.0,
+        "voltage": 12.2,
+        "signal_strength": 85
+      }
+    },
+    "invalid_range": {
+      "message_id": "MSG-103",
+      "sender": "SENSOR-01",
+      "message_type": "TELEMETRY",
+      "timestamp": "2026-10-17T00:00:20+05:30",
+      "sequence": 103,
+      "payload": {
+        "temperature": 180.0,
+        "voltage": 12.2,
+        "signal_strength": 85
+      }
+    },
+    "invalid_sender": {
+      "message_id": "MSG-104",
+      "sender": "UNAUTH-99",
+      "message_type": "TELEMETRY",
+      "timestamp": "2026-10-17T00:00:30+05:30",
+      "sequence": 104,
+      "payload": {
+        "temperature": 28.0,
+        "voltage": 12.2,
+        "signal_strength": 84
+      }
+    },
+    "invalid_type": {
+      "message_id": "MSG-105",
+      "sender": "SENSOR-01",
+      "message_type": "TELEMETRY",
+      "timestamp": "2026-10-17T00:00:35+05:30",
+      "sequence": 105,
+      "payload": {
+        "temperature": true,
+        "voltage": 12.2,
+        "signal_strength": 85
+      }
+    },
+    "invalid_stale": {
+      "message_id": "MSG-106",
+      "sender": "SENSOR-02",
+      "message_type": "TELEMETRY",
+      "timestamp": "2000-01-01T00:00:00+00:00",
+      "sequence": 106,
+      "payload": {
+        "temperature": 24.0,
+        "voltage": 12.0,
+        "signal_strength": 80
+      }
+    },
+    "invalid_future": {
+      "message_id": "MSG-107",
+      "sender": "SENSOR-03",
+      "message_type": "TELEMETRY",
+      "timestamp": "2099-01-01T00:00:00+00:00",
+      "sequence": 107,
+      "payload": {
+        "temperature": 24.0,
+        "voltage": 12.0,
+        "signal_strength": 80
+      }
+    },
+    "invalid_malformed": "{\"message_id\": \"MSG-108\", \"message_type\": \"TELEMETRY\""
+  },
+  "commands": {
+    "valid": {
+      "message_id": "CMD-200",
+      "sender": "CONTROL-01",
+      "message_type": "COMMAND",
+      "timestamp": "2026-10-17T00:00:45+05:30",
+      "sequence": 200,
+      "command": "TELEMETRY_REQUEST",
+      "parameters": {
+        "target_sensor": "SENSOR-02",
+        "duration_seconds": 30
+      }
+    },
+    "invalid_unauthorized": {
+      "message_id": "CMD-201",
+      "sender": "SENSOR-01",
+      "message_type": "COMMAND",
+      "timestamp": "2026-10-17T00:00:50+05:30",
+      "sequence": 201,
+      "command": "DIAGNOSTIC_PING",
+      "parameters": {
+        "target_sensor": "SENSOR-02",
+        "detail_level": 2
+      }
+    },
+    "invalid_params": {
+      "message_id": "CMD-202",
+      "sender": "CONTROL-01",
+      "message_type": "COMMAND",
+      "timestamp": "2026-10-17T00:00:55+05:30",
+      "sequence": 202,
+      "command": "TELEMETRY_REQUEST",
+      "parameters": {
+        "target_sensor": "SENSOR-02",
+        "duration_seconds": 150
+      }
+    },
+    "invalid_unsupported": {
+      "message_id": "CMD-203",
+      "sender": "CONTROL-01",
+      "message_type": "COMMAND",
+      "timestamp": "2026-10-17T00:01:00+05:30",
+      "sequence": 203,
+      "command": "POWER_ON",
+      "parameters": {}
+    }
+  }
+}

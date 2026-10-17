@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SecureGate synthetic message schema",
+  "description": "Local educational schema for telemetry and command validation. It is intentionally synthetic and should not be used for real operational systems.",
+  "type": "object",
+  "oneOf": [
+    {"$ref": "#/$defs/TelemetryMessage"},
+    {"$ref": "#/$defs/CommandMessage"}
+  ],
+  "$defs": {
+    "MessageId": {"type": "string", "minLength": 1},
+    "Timestamp": {"type": "string", "format": "date-time"},
+    "Sequence": {"type": "integer", "minimum": 0},
+    "TelemetryMessage": {
+      "type": "object",
+      "required": ["message_id", "sender", "message_type", "timestamp", "sequence", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {"$ref": "#/$defs/MessageId"},
+        "sender": {"type": "string", "enum": ["SENSOR-01", "SENSOR-02", "SENSOR-03"]},
+        "message_type": {"const": "TELEMETRY"},
+        "timestamp": {"$ref": "#/$defs/Timestamp"},
+        "sequence": {"$ref": "#/$defs/Sequence"},
+        "payload": {
+          "type": "object",
+          "required": ["temperature", "voltage", "signal_strength"],
+          "additionalProperties": false,
+          "properties": {
+            "temperature": {"type": "number", "minimum": -40.0, "maximum": 120.0},
+            "voltage": {"type": "number", "minimum": 0.0, "maximum": 60.0},
+            "signal_strength": {"type": "integer", "minimum": 0, "maximum": 100}
+          }
+        }
+      }
+    },
+    "CommandMessage": {
+      "type": "object",
+      "required": ["message_id", "sender", "message_type", "command", "timestamp", "sequence", "parameters"],
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {"$ref": "#/$defs/MessageId"},
+        "sender": {"type": "string", "enum": ["CONTROL-01", "OPS-CTRL", "GATEWAY-01"]},
+        "message_type": {"const": "COMMAND"},
+        "command": {"type": "string", "enum": ["STATUS_CHECK", "SENSOR_READ", "DIAGNOSTIC_PING", "TELEMETRY_REQUEST"]},
+        "timestamp": {"$ref": "#/$defs/Timestamp"},
+        "sequence": {"$ref": "#/$defs/Sequence"},
+        "parameters": {"type": "object"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"command": {"const": "STATUS_CHECK"}}, "required": ["command"]},
+          "then": {
+            "properties": {
+              "parameters": {
+                "additionalProperties": false,
+                "properties": {"include_health": {"type": "boolean"}}
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"command": {"const": "SENSOR_READ"}}, "required": ["command"]},
+          "then": {
+            "properties": {
+              "parameters": {
+                "additionalProperties": false,
+                "required": ["target_sensor"],
+                "properties": {"target_sensor": {"type": "string", "enum": ["SENSOR-01", "SENSOR-02", "SENSOR-03"]}}
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"command": {"const": "DIAGNOSTIC_PING"}}, "required": ["command"]},
+          "then": {
+            "properties": {
+              "parameters": {
+                "additionalProperties": false,
+                "required": ["target_sensor", "detail_level"],
+                "properties": {
+                  "target_sensor": {"type": "string", "enum": ["SENSOR-01", "SENSOR-02", "SENSOR-03"]},
+                  "detail_level": {"type": "integer", "minimum": 1, "maximum": 3}
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"command": {"const": "TELEMETRY_REQUEST"}}, "required": ["command"]},
+          "then": {
+            "properties": {
+              "parameters": {
+                "additionalProperties": false,
+                "required": ["target_sensor", "duration_seconds"],
+                "properties": {
+                  "target_sensor": {"type": "string", "enum": ["SENSOR-01", "SENSOR-02", "SENSOR-03"]},
+                  "duration_seconds": {"type": "integer", "minimum": 1, "maximum": 120}
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "strict": true,
+  "policies": {
+    "required_fields": {
+      "telemetry": ["message_id", "sender", "message_type", "timestamp", "sequence", "payload"],
+      "command": ["message_id", "sender", "message_type", "command", "timestamp", "sequence", "parameters"]
+    },
+    "allowed_senders": ["SENSOR-01", "SENSOR-02", "SENSOR-03", "CONTROL-01", "OPS-CTRL", "GATEWAY-01"],
+    "authorized_command_senders": {
+      "CONTROL-01": ["STATUS_CHECK", "SENSOR_READ", "DIAGNOSTIC_PING", "TELEMETRY_REQUEST"],
+      "OPS-CTRL": ["STATUS_CHECK", "SENSOR_READ", "DIAGNOSTIC_PING", "TELEMETRY_REQUEST"],
+      "GATEWAY-01": ["STATUS_CHECK", "TELEMETRY_REQUEST"]
+    },
+    "allowed_message_types": ["TELEMETRY", "COMMAND"],
+    "allowed_command_types": ["STATUS_CHECK", "SENSOR_READ", "DIAGNOSTIC_PING", "TELEMETRY_REQUEST"],
+    "timestamp_max_age_seconds": 300,
+    "timestamp_max_future_seconds": 60,
+    "temperature_limits": [-40.0, 120.0],
+    "voltage_limits": [0.0, 60.0],
+    "signal_strength_limits": [0, 100],
+    "sequence_policy": "Sequence numbers must increase for each sender when replay protection is enabled.",
+    "replay_protection": true,
+    "strict_fields": true
+  },
+  "telemetry": {
+    "description": "Telemetry messages carry synthetic operational sensor readings.",
+    "fields": {
+      "message_id": {"type": "string", "example": "MSG-101", "validation": "Non-empty, unique identifier."},
+      "sender": {"type": "string", "allowed_values": ["SENSOR-01", "SENSOR-02", "SENSOR-03"], "validation": "Must be on the allowlist."},
+      "message_type": {"type": "string", "allowed_values": ["TELEMETRY"], "validation": "Must be TELEMETRY."},
+      "timestamp": {"type": "string", "format": "ISO-8601 with timezone offset", "example": "2026-10-17T00:00:00+05:30", "validation": "Must be timezone-aware and not stale."},
+      "sequence": {"type": "integer", "minimum": 0, "validation": "Monotonic per sender when replay protection is enabled."},
+      "payload": {
+        "type": "object",
+        "required_fields": ["temperature", "voltage", "signal_strength"],
+        "properties": {
+          "temperature": {"type": "number", "minimum": -40.0, "maximum": 120.0},
+          "voltage": {"type": "number", "minimum": 0.0, "maximum": 60.0},
+          "signal_strength": {"type": "integer", "minimum": 0, "maximum": 100}
+        }
+      }
+    }
+  },
+  "command": {
+    "description": "Command messages describe synthetic control actions without executing them.",
+    "fields": {
+      "message_id": {"type": "string", "example": "CMD-200", "validation": "Unique builder-assigned identifier."},
+      "sender": {"type": "string", "allowed_values": ["CONTROL-01", "OPS-CTRL", "GATEWAY-01"], "validation": "Must be on the allowlist and authorized for the chosen command."},
+      "message_type": {"type": "string", "allowed_values": ["COMMAND"], "validation": "Must be COMMAND."},
+      "timestamp": {"type": "string", "format": "ISO-8601 with timezone offset", "example": "2026-10-17T00:00:10+05:30", "validation": "Must be timezone-aware and not stale."},
+      "sequence": {"type": "integer", "minimum": 0, "validation": "Monotonic per sender when replay protection is enabled."},
+      "command": {"type": "string", "allowed_values": ["STATUS_CHECK", "SENSOR_READ", "DIAGNOSTIC_PING", "TELEMETRY_REQUEST"], "validation": "Must match the sender authorization policy."},
+      "parameters": {
+        "type": "object",
+        "required_fields_by_command": {
+          "STATUS_CHECK": [],
+          "SENSOR_READ": ["target_sensor"],
+          "DIAGNOSTIC_PING": ["target_sensor", "detail_level"],
+          "TELEMETRY_REQUEST": ["target_sensor", "duration_seconds"]
+        },
+        "properties": {
+          "target_sensor": {"type": "string", "allowed_values": ["SENSOR-01", "SENSOR-02", "SENSOR-03"], "comment": "Synthetic target only."},
+          "detail_level": {"type": "integer", "minimum": 1, "maximum": 3},
+          "duration_seconds": {"type": "integer", "minimum": 1, "maximum": 120},
+          "include_health": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "example_telemetry": {
+    "message_id": "MSG-101",
+    "sender": "SENSOR-01",
+    "message_type": "TELEMETRY",
+    "timestamp": "2026-10-17T00:00:00+05:30",
+    "sequence": 101,
+    "payload": {
+      "temperature": 28.5,
+      "voltage": 12.2,
+      "signal_strength": 85
+    }
+  },
+  "example_command": {
+    "message_id": "CMD-200",
+    "sender": "CONTROL-01",
+    "message_type": "COMMAND",
+    "timestamp": "2026-10-17T00:00:10+05:30",
+    "sequence": 200,
+    "command": "STATUS_CHECK",
+    "parameters": {}
+  }
+}

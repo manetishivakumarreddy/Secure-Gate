@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SecureGate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LOCAL VALIDATION SIMULATOR</p>
+          <h1>SecureGate</h1>
+        </div>
+        <div class="status-badge">Synthetic-only • Demo mode</div>
+      </header>
+
+      <main class="dashboard">
+        <section class="overview section-panel">
+          <div class="section-heading">
+            <h2>Overview</h2>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span>Total validations</span>
+              <strong id="total-validations">0</strong>
+            </div>
+            <div class="stat-card accept">
+              <span>Accepted</span>
+              <strong id="accepted-count">0</strong>
+            </div>
+            <div class="stat-card reject">
+              <span>Rejected</span>
+              <strong id="rejected-count">0</strong>
+            </div>
+            <div class="stat-card neutral">
+              <span>Acceptance rate</span>
+              <strong id="acceptance-rate">0%</strong>
+            </div>
+          </div>
+          <div class="recent-activity">
+            <h3>Recent activity</h3>
+            <ul id="recent-activity-list"></ul>
+          </div>
+        </section>
+
+        <section class="section-panel validator-panel">
+          <div class="section-heading">
+            <h2>Message Validator</h2>
+          </div>
+          <div class="controls-row">
+            <label>Sample</label>
+            <select id="telemetry-sample-select"></select>
+          </div>
+          <textarea id="telemetry-json" rows="16" spellcheck="false"></textarea>
+          <div class="button-row">
+            <button id="validate-telemetry">Validate message</button>
+            <button class="secondary" id="load-telemetry-sample">Load sample</button>
+          </div>
+          <div class="result-box" id="telemetry-result-box">
+            <div class="result-indicator" id="telemetry-indicator">WAITING</div>
+            <div id="telemetry-result-details"></div>
+          </div>
+        </section>
+
+        <section class="section-panel command-panel">
+          <div class="section-heading">
+            <h2>Command Simulator</h2>
+          </div>
+          <p class="editor-help">Edit or paste a fictional command message. Commands are validated only and are never executed.</p>
+          <div class="controls-row">
+            <label for="command-sample-select">Sample</label>
+            <select id="command-sample-select"></select>
+            <button class="secondary" id="load-command-sample">Load sample</button>
+          </div>
+          <div class="editor-frame command-editor-frame">
+            <div class="line-numbers" id="command-line-numbers" aria-hidden="true">1</div>
+            <textarea id="command-json" rows="18" spellcheck="false" wrap="off" aria-label="Editable command JSON"></textarea>
+          </div>
+          <div class="button-row">
+            <button id="validate-command">Validate Command</button>
+            <button class="secondary" id="load-valid-command">Load Valid Example</button>
+            <button class="secondary" id="load-invalid-command">Load Invalid Example</button>
+            <button class="secondary" id="format-command">Format JSON</button>
+            <button class="alert" id="clear-command">Clear Editor</button>
+          </div>
+          <div class="result-box command-result-box" id="command-result-box" aria-live="polite">
+            <div class="result-indicator" id="command-indicator">READY</div>
+            <h3 id="command-result-title">Ready to validate</h3>
+            <div id="command-result-details">No command has been submitted yet.</div>
+            <p class="not-executed">Validation only — this command was not and will not be executed.</p>
+          </div>
+        </section>
+
+        <section class="section-panel audit-panel">
+          <div class="section-heading">
+            <h2>Audit Logs</h2>
+          </div>
+          <div class="filters-row">
+            <input id="audit-search" type="text" placeholder="Search events" />
+            <input id="audit-sender-filter" type="text" placeholder="Filter sender" />
+            <select id="audit-decision-filter">
+              <option value="">All decisions</option>
+              <option value="ACCEPT">ACCEPT</option>
+              <option value="REJECT">REJECT</option>
+            </select>
+            <select id="audit-category-filter">
+              <option value="">All categories</option>
+              <option value="telemetry">telemetry</option>
+              <option value="command">command</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button id="refresh-audit">Refresh</button>
+            <button class="secondary" id="export-json">Export JSON</button>
+            <button class="secondary" id="export-csv">Export CSV</button>
+            <button class="alert" id="clear-audit">Clear log</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Details</th>
+                  <th>Event</th>
+                  <th>Message ID</th>
+                  <th>Sender</th>
+                  <th>Category</th>
+                  <th>Decision</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="audit-body"></tbody>
+            </table>
+          </div>
+          <section class="audit-detail-panel" aria-live="polite">
+            <h3>Event details</h3>
+            <pre id="audit-detail">Select an event to inspect its recorded validation decision.</pre>
+          </section>
+        </section>
+
+        <section class="section-panel tests-panel">
+          <div class="section-heading">
+            <h2>Test Lab</h2>
+          </div>
+          <div class="button-row">
+            <button id="run-tests">Run validation tests</button>
+          </div>
+          <pre id="test-output">No test run yet.</pre>
+        </section>
+
+        <section class="section-panel system-panel">
+          <div class="section-heading">
+            <h2>System Information</h2>
+          </div>
+          <p>SecureGate parses local synthetic JSON, applies schema and policy checks, then records each decision to a local JSON Lines audit file. Accepted messages update the in-memory replay state; commands are never executed.</p>
+          <ul>
+            <li>Telemetry sender allowlist: SENSOR-01, SENSOR-02, SENSOR-03.</li>
+            <li>Temperature: -40 to 120 (illustrative units); voltage: 0 to 60 (illustrative units); signal strength: integer 0 to 100.</li>
+            <li>Timestamps must include a timezone, be no more than 300 seconds old, and no more than 60 seconds ahead.</li>
+            <li>Sequence numbers must increase per sender. Duplicate message IDs and replayed sequences are rejected while replay protection is enabled.</li>
+            <li>Commands: STATUS_CHECK, SENSOR_READ, DIAGNOSTIC_PING, TELEMETRY_REQUEST. These values describe harmless simulated actions only.</li>
+          </ul>
+          <p class="editor-help">Validation is not authentication. No real device or network integration is present. The local audit log is not tamper-proof; replay state resets when the app restarts. All numeric limits are illustrative, not operational safety thresholds.</p>
+          <details>
+            <summary>View the machine-readable schema</summary>
+            <pre id="schema-view">Loading schema…</pre>
+          </details>
+        </section>
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>

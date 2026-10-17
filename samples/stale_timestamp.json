@@ -1,0 +1,8 @@
+{
+  "message_id": 108,
+  "sequence": 17,
+  "timestamp": "2020-01-01T00:00:00Z",
+  "sender": "device_01",
+  "command": "SET_MODE",
+  "value": 2
+}

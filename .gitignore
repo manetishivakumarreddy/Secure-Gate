@@ -1,0 +1,3 @@
+__pycache__/
+*.py[cod]
+securegate_audit.log
